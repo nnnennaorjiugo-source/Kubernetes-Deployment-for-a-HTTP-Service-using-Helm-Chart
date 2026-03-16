@@ -73,13 +73,13 @@ Here we cover the design decisons for the different helm templates and component
 
 ## 3.1 Deployment
 
-Because this is a stateless application with no external dependencies, a simple deployment with replicas model is used.
+Because this is a stateless application with no external dependencies, a simple deployment with 3 replicas model is used.
 
 ---
 
 ## 3.2 Resource Sizing Decisions
 
-The service is a lightweight stateless HTTP endpoint, so the resource values assume low to moderate traffic with occasional short bursts rather than a sustained heavy load.
+The service is a lightweight stateless HTTP endpoint, so the resource values assume low to moderate traffic with occasional short spikes rather than a sustained heavy load.
 
 ### Why these values
 
@@ -99,15 +99,30 @@ A request of 100m CPU and 128Mi memory guarantees enough resources for normal re
 
 ## 3.3 Health Probes
 
-The /get endpoint is used for both readiness and liveness probes because the assignment guarantees that it returns HTTP 200. In a real application, it would be a dedicated /healthz endpoint.
+The /get endpoint is used for both readiness and liveness probes because the assignment guarantees that it returns HTTP 200. In a real application, it would be a dedicated health endpoint.
 
 ### Readiness Probe
+
+```yaml
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+```
 
 Since the readiness probe checks whether the pod is ready to receive traffic, a short initial delay of 5 seconds allows the container to start before checks begin. The probe runs every 10 seconds, and the pod is marked not ready after 3 consecutive failures, preventing traffic from being routed to an unhealthy instance.
 
 ### Liveness Probe
 
-Since the liveness probe ensures the container is still functioning and not stuck in a failed state, a slightly longer initial delay of 10 seconds avoids restarting the container during startup. If the endpoint fails 3 consecutive checks, Kubernetes restarts the container to recover automatically.
+```yaml
+        livenessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+```
+Since the liveness probe ensures the container is still functioning and not stuck in a failed state, a slightly longer initial delay of 10 seconds avoids restarting the container during startup. If the endpoint fails 3 consecutive checks, Kubernetes restarts the container to recover automatically. With multiple restarts, a troubleshooting will have to be performed to fix the issue
 
 ---
 
