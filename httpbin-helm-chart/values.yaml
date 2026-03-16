@@ -1,0 +1,64 @@
+replicaCount: 3
+
+image:
+  repository: kennethreitz/httpbin
+  tag: latest
+
+appName: httpbin
+
+# service:
+#   name: httpbin-service
+#   type: ClusterIP
+#   port: 80
+#   targetPort: 80
+
+# resources:
+#   requests:
+#     cpu: "250m"
+#     memory: "128Mi"
+#   limits:
+#     cpu: "500m"
+#     memory: "256Mi"
+
+# probes:
+#   path: /get
+#   readiness:
+#     initialDelaySeconds: 5
+#     periodSeconds: 10
+#     timeoutSeconds: 2
+#     failureThreshold: 3
+#   liveness:
+#     initialDelaySeconds: 10
+#     periodSeconds: 20
+#     timeoutSeconds: 2
+#     failureThreshold: 3
+
+# hpa:
+#   enabled: true
+#   minReplicas: 2
+#   maxReplicas: 5
+#   averageUtilization: 70
+
+# pdb:
+#   enabled: true
+#   minAvailable: 1
+
+# networkPolicy:
+#   enabled: true
+#   port: 80
+
+# rbac:
+#   enabled: true
+#   roleName: httpbin-read-pods
+
+# ingress:
+#   enabled: true
+#   className: alb
+#   host: your.domainz.com
+#   annotations:
+#     alb.ingress.kubernetes.io/scheme: internet-facing
+#     alb.ingress.kubernetes.io/target-type: ip
+#     alb.ingress.kubernetes.io/healthcheck-path: /get
+#     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:478544567935:certificate/534df4cb-6dc0-4f54-a7af-1000975f02eb
+#     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+#     alb.ingress.kubernetes.io/ssl-redirect: "443"
