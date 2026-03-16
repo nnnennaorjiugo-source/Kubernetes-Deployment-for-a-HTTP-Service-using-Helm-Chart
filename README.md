@@ -7,9 +7,10 @@
 1. Overview  
 2. Architecture  
 3. Key Design Decisions and Trade-Offs  
-4. Other Trade-offs  
-5. What Can Be Improved With More Time  
-6. How to Deploy the Chart  
+4. Other Trade-offs 
+5. Reliability, scalability and Security Considerations 
+6. What Can Be Improved With More Time  
+7. How to Deploy the Chart  
 
 ---
 
@@ -172,7 +173,7 @@ Using AWS ALB aligns well with EKS and simplifies TLS management, but introduces
 
 ## 3.7 Network Policy
 
-A NetworkPolicy was added to restrict inbound traffic to the application pods on TCP port 80, which is the only port required by the service.
+A basic NetworkPolicy was added to restrict inbound traffic to the application pods on TCP port 80, which is the only port required by the service.
 
 This reduces the exposed attack surface compared to the default Kubernetes networking model, which allows all pod-to-pod communication.
 
@@ -188,9 +189,40 @@ For simplicity, the policy allows traffic from any source on port 80. In a produ
 
 ---
 
-# 5. Improvements With More Time
+# 5. Reliability, Scalability and Security Considerations
 
-- More values would be parameterized in the Helm chart so the deployment can be reused easily across different environments.
+Reliability
+
+- The deployment runs with multiple replicas so the service is not dependent on a single pod.
+
+- Readiness and liveness probes ensure traffic is only routed to healthy containers and allow Kubernetes to restart pods that become unresponsive.
+
+- A PodDisruptionBudget ensures that at least two pods remain available during voluntary disruptions such as node maintenance or upgrades.
+
+- Together these provide a reasonable reliability baseline for a stateless service without introducing unnecessary complexity.
+
+Scalability
+
+- A HorizontalPodAutoscaler is used to scale the deployment based on CPU utilisation so the service can react to traffic spikes automatically.
+
+- CPU is not a perfect signal for HTTP load, but it is a simple and commonly used starting point.
+
+- In a production system I would likely scale on request rate or latency using custom metrics (for example Prometheus Adapter or KEDA).
+
+Security
+
+- TLS termination is handled at the AWS Application Load Balancer using ACM, which keeps certificate management and private keys outside the cluster.
+
+- This approach aligns well with typical EKS deployments and simplifies certificate management.
+
+- A basic NetworkPolicy is included to reduce unnecessary pod exposure. For simplicity it currently allows traffic from any source on port 80.
+
+- In a production environment I would further restrict ingress to the ingress controller and enforce stronger pod and container security contexts
+---
+
+# 6. Improvements With More Time
+
+- Additional configuration that varies across environments (such as replica counts, resource limits, and ingress settings) would be exposed through Helm values to improve reusability.
 
 - Namespaces would be used properly to keep application workloads separate from other cluster components.
 
@@ -198,9 +230,15 @@ For simplicity, the policy allows traffic from any source on port 80. In a produ
 
 - More meaningful HPA metrics would be used such as request rate or latency instead of relying only on CPU.
 
+- I used the provided image reference for the assignment, but in production I would pin the image to a fixed version or digest to ensure reproducible deployments. The CI pipeline would update this reference as part of the release process.
+
+- Rolling update strategy – Explicit RollingUpdate settings (maxSurge / maxUnavailable) would be added to control deployment behaviour and avoid capacity drops during upgrades.
+
+- Pod and container security contexts (for example runAsNonRoot and allowPrivilegeEscalation: false) would be enforced to reduce container privilege levels.
+
 ---
 
-# 6. How to Deploy the Chart
+# 7. How to Deploy the Chart
 
 This section describes deployment to a **local Minikube cluster**.
 
